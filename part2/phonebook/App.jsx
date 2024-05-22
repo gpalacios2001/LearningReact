@@ -1,83 +1,94 @@
 import { useState } from 'react'
+import Note from './components/Note'
 
-
-const Button = ({ handleClick, text }) => (
-  <button onClick={handleClick}>
-    {text}
-  </button>
-)
-const StatisticLine = (props) => {
+const Form = (props) => {
   return (
-    <div>
-      <p>{props.text} {props.value}</p>
-    </div>
+    <form onSubmit={props.addName}>      
+        <div>
+          name: <input
+          value = {props.newName}
+          onChange = {props.handleNameChange}/>
+        </div>
+        <div>
+          number: <input 
+          value = {props.newNumber}
+          onChange = {props.handleNumberChange}/>
+          </div>
+        <div>
+          <button type="submit">add</button>
+        </div>
+      </form>
   )
-    
+
 }
-const Statistics = (props) => {
-  console.log(props.total)
-  if (props.total === 0) {
-    return (
-      <div>
-        <h2>Statistics</h2>
-        <p></p>
-        <p></p>
-        No Feedback Given
-      </div>
-    )
-  }
+const Person = ({person}) => {
+  console.log(person.name, "y")
+  return (
+    <li>{person.name} {person.number}</li>
+  )
+}
+
+const People = ({persons}) => {
+  console.log(persons, "w")
   return (
     <div>
-      <h2>Statistics</h2>
-      <StatisticLine text="good" value = {props.good} />
-      <StatisticLine text="neutral" value = {props.neutral} />
-      <StatisticLine text="bad" value = {props.bad} />
-      <StatisticLine text="all" value = {props.total} />
-      <StatisticLine text="avg" value = {props.avg} />
-      <StatisticLine text="positive" value = {props.positive * 100} />
+      {persons.map(person => 
+      <Person key={person.id} person={person} />
+    )}
+
     </div>
+    
   )
+  
 }
 
 const App = () => {
-  // save clicks of each button to its own state
-  const [good, setGood] = useState(0)
-  const [neutral, setNeutral] = useState(0)
-  const [bad, setBad] = useState(0)
-  const [total, setTotal] = useState(0)
-  const [avg, setAverage] = useState(0)
-  const [positive, setPositive] = useState(0)
+  const [persons, setPersons] = useState([
+    { name: 'Arto Hellas', number: '040-123456', id: 1 },
+    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
+    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
+    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
+  ])
+  const [newName, setNewName] = useState('')
+  const [newNumber, setNewNumber] = useState('')
 
-  const handleGoodClick = () => {
-    const updatedGood = good + 1
-    setGood(updatedGood)
-    setTotal(updatedGood + neutral + bad)
-    setAverage((updatedGood - bad)/(total + 1))
-    setPositive(updatedGood/(total + 1))
+
+  const addName = (event) => {
+    if (persons.map(person => 
+      person.name).includes(newName)) {
+      alert(`${newName} is already added to phonebook`)
+    }
+    else {
+      event.preventDefault()
+    const personObject = {
+      name: newName,
+      id: persons.length + 1,
+      number: newNumber
+    }
+    setPersons(persons.concat(personObject))
+    setNewName('')
+    setNewNumber('')
+    }
   }
-  const handleNeutralClick = () => {
-    const updatedNeutral = neutral + 1
-    setNeutral(updatedNeutral)
-    setTotal(good + updatedNeutral + bad) 
-    setAverage((good - bad)/(total + 1))
-    setPositive(good/(total + 1))
-  }
-  const handleBadClick = () => {
-    const updatedBad = bad + 1
-    setBad(updatedBad)
-    setTotal(good + neutral + updatedBad) 
-    setAverage((good - updatedBad)/(total + 1))
-    setPositive(good/(total + 1))
-  }
+
+    const handleNameChange = (event) => {
+      setNewName(event.target.value)
+    }
+    const handleNumberChange = (event) => {
+      setNewNumber(event.target.value)
+    }
 
   return (
     <div>
-      <h1>Give Feedback</h1>
-      <Button handleClick={handleGoodClick} text='good' />
-      <Button handleClick={handleNeutralClick} text='neutral' />
-      <Button handleClick={handleBadClick} text='bad' />
-      <Statistics good = {good} neutral = {neutral} bad = {bad}
-      total = {total} avg = {avg} positive = {positive}></Statistics>
+      <h2>Phonebook</h2>
+      <Form addName = {addName} newName = {newName}
+      handleNameChange = {handleNameChange} newNumber = {newNumber}
+      handleNumberChange = {handleNumberChange}></Form>
+      <h2>Numbers</h2>
+      <People persons={persons}></People>
+      
+      
+      
     </div>
   )
 }
