@@ -1,116 +1,118 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import Note from './components/Note'
-import noteService from './services/notes'
+import personService from './services/persons'
 
-const Notification = ({ message }) => {
-  if (message === null) {
-    return null
-  }
 
+const Form = (props) => {
   return (
-    <div className='error'>
-      {message}
-    </div>
+    <form onSubmit={props.addName}>      
+        <div>
+          name: <input
+          value = {props.newName}
+          onChange = {props.handleNameChange}/>
+        </div>
+        <div>
+          number: <input 
+          value = {props.newNumber}
+          onChange = {props.handleNumberChange}/>
+          </div>
+        <div>
+          <button type="submit">add</button>
+        </div>
+      </form>
+  )
+
+}
+const Person = ({person, del}) => {
+  const label = "delete"
+  return (
+    <li>{person.name} {person.number}
+    <button onClick = {del}>{label}</button>
+    </li>
   )
 }
-const Footer = () => {
-  const footerStyle = {
-    color: 'green',
-    fontStyle: 'italic',
-    fontSize: 16
-  }
+
+const People = ({persons, del}) => {
+  console.log(persons, "w")
   return (
-    <div style={footerStyle}>
-      <br />
-      <em>Note app, Department of Computer Science, University of Helsinki 2024</em>
+    <div>
+      {persons.map(person => 
+      <Person key={person.id} person={person} del = {()=> del(person.id)}
+      />
+    )}
     </div>
   )
 }
 
 const App = () => {
-  const [notes, setNotes] = useState([])
-  const [newNote, setNewNote] = useState('')
-  const [showAll, setShowAll] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('some error happened...')
-
+  const [persons, setPersons] = useState([])
   useEffect(() => {
-    noteService
+    personService
       .getAll()
-      .then(initialNotes => {
-        setNotes(initialNotes)
+      .then(initialPeople => {
+        setPersons(initialPeople)
       })
   }, [])
-
-  const addNote = (event) => {
-    event.preventDefault()
-    const noteObject = {
-      content: newNote,
-      important: Math.random() > 0.5,
-    }
   
-    noteService
-      .create(noteObject)
-        .then(returnedNote => {
-        setNotes(notes.concat(returnedNote))
-        setNewNote('')
+  const [newName, setNewName] = useState('')
+  const [newNumber, setNewNumber] = useState('')
+
+
+  const addName = (event) => {
+    if (persons.map(person => 
+      person.name).includes(newName)) {
+      alert(`${newName} is already added to phonebook`)
+    }
+
+    else {
+      event.preventDefault()
+    const personObject = {
+      name: newName,
+      number: newNumber
+    }
+    setPersons(persons.concat(personObject))
+    setNewName('')
+    setNewNumber('')
+
+    personService
+      .create(personObject)
+        .then(returnedPerson => {
+        setPersons(persons.concat(returnedPerson))
+        setNewName('')
       })
+    }
   }
-
-  const toggleImportanceOf = id => {
-    const note = notes.find(n => n.id === id)
-    const changedNote = { ...note, important: !note.important }
-
-    noteService
-      .update(id, changedNote).then(returnedNote => {
-        setNotes(notes.map(note => note.id !== id ? note : returnedNote))
-      })
-      .catch(error => {
-
-        setErrorMessage(
-          `Note '${note.content}' was already removed from server`
-        )
-        setTimeout(() => {
-          setErrorMessage(null)
-        }, 5000)
-        setNotes(notes.filter(n => n.id !== id))
-      })
+  
+  const delOf = (id) => {
+    if (window.confirm(`Do you really want to delete ${id}?`)) {
+      console.log(`Deleting person with id: ${id}`)
+      personService
+        .del(id)
+        .then(() => {
+          setPersons(persons.filter(person => person.id !== id))
+        })
+        .catch(error => {
+          console.error(`error:`, error)
+          alert(`The person was already deleted from server`)
+          setPersons(persons.filter(person => person.id !== id))
+        })
+    }
   }
-
-  const handleNoteChange = (event) => {
-    setNewNote(event.target.value)
-  }
-
-  const notesToShow = showAll
-    ? notes
-    : notes.filter(note => note.important)
+    const handleNameChange = (event) => {
+      setNewName(event.target.value)
+    }
+    const handleNumberChange = (event) => {
+      setNewNumber(event.target.value)
+    }
 
   return (
     <div>
-      <h1>Notes</h1>
-      <Notification message={errorMessage} />
-      <div>
-        <button onClick={() => setShowAll(!showAll)}>
-          show {showAll ? 'important' : 'all' }
-        </button>
-      </div>      
-      <ul>
-        {notesToShow.map(note => 
-          <Note
-            key={note.id}
-            note={note}
-            toggleImportance={() => toggleImportanceOf(note.id)}
-          />
-        )}
-      </ul>
-      <form onSubmit={addNote}>
-        <input
-          value={newNote}
-          onChange={handleNoteChange}
-        />
-        <button type="submit">save</button>
-      </form> 
-      <Footer/>
+      <h1>Phonebook</h1>
+      <Form addName = {addName} newName = {newName}
+      handleNameChange = {handleNameChange} newNumber = {newNumber}
+      handleNumberChange = {handleNumberChange}></Form>
+      <h2>Numbers</h2>
+      <People persons={persons} del = {delOf}></People>
     </div>
   )
 }
